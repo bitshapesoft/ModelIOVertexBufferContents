@@ -10,56 +10,26 @@ import UIKit
 import Metal
 import MetalKit
 
-let MaxBuffers = 3
-let ConstantBufferSize = 1024*1024
-
-let vertexData:[Float] =
-[
-    -1.0, -1.0, 0.0, 1.0,
-    -1.0,  1.0, 0.0, 1.0,
-    1.0, -1.0, 0.0, 1.0,
-    
-    1.0, -1.0, 0.0, 1.0,
-    -1.0,  1.0, 0.0, 1.0,
-    1.0,  1.0, 0.0, 1.0,
-    
-    -0.0, 0.25, 0.0, 1.0,
-    -0.25, -0.25, 0.0, 1.0,
-    0.25, -0.25, 0.0, 1.0
-]
-
-let vertexColorData:[Float] =
-[
-    0.0, 0.0, 1.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    
-    0.0, 0.0, 1.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    
-    0.0, 0.0, 1.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    1.0, 0.0, 0.0, 1.0
-]
-
 class GameViewController:UIViewController, MTKViewDelegate {
     
+    //===================================================================================
+    //MARK: Testing Properties
+    //===================================================================================
+    
+    let modelNames = ["uv-sphere.stl", "wavePlane.obj"]
+    
+    //===================================================================================
+    //MARK: Properties
+    //===================================================================================
+    
     var device: MTLDevice! = nil
+    var library: MTLLibrary! = nil
+    let textField = UITextView()
+    var text = "\n\n'uv-sphere.stl' should resolve to this vertex:\n{\n   position: (-0.892934, 0.145383, 1.18061),\n   normal: (-0.470888, 0.0463828, 0.880973),\n   color: (0.0, 0.0, 0.0, 1.0),\n   textureCoordinate: (0.0)\n}\n\n'wavePlane.obj' should resolve to this vertex:\n{\n   position: (-1.7199, 0.085319, 2.25768),\n   normal: (-0.0048, 0.9858, -0.1676),\n   color: (0.0, 0.0, 0.0, 1.0),\n   textureCoordinate: (0.0)\n}"
     
-    var commandQueue: MTLCommandQueue! = nil
-    var pipelineState: MTLRenderPipelineState! = nil
-    var vertexBuffer: MTLBuffer! = nil
-    var vertexColorBuffer: MTLBuffer! = nil
-    
-    let inflightSemaphore = DispatchSemaphore(value: MaxBuffers)
-    var bufferIndex = 0
-    
-    // offsets used in animation
-    var xOffset:[Float] = [ -1.0, 1.0, -1.0 ]
-    var yOffset:[Float] = [ 1.0, 0.0, -1.0 ]
-    var xDelta:[Float] = [ 0.002, -0.001, 0.003 ]
-    var yDelta:[Float] = [ 0.001,  0.002, -0.001 ]
+    //===================================================================================
+    //MARK: View Loading
+    //===================================================================================
     
     override func viewDidLoad() {
         
@@ -77,119 +47,96 @@ class GameViewController:UIViewController, MTKViewDelegate {
         view.device = device
         view.delegate = self
         
-        loadAssets()
-    }
-    
-    func loadAssets() {
-        
-        // load any resources required for rendering
-        let view = self.view as! MTKView
-        commandQueue = device.makeCommandQueue()
-        commandQueue.label = "main command queue"
-        
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.makeFunction(name: "passThroughFragment")!
-        let vertexProgram = defaultLibrary.makeFunction(name: "passThroughVertex")!
-        
-        let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
-        pipelineStateDescriptor.vertexFunction = vertexProgram
-        pipelineStateDescriptor.fragmentFunction = fragmentProgram
-        pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-        pipelineStateDescriptor.sampleCount = view.sampleCount
-        
-        do {
-            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
-        } catch let error {
-            print("Failed to create pipeline state, error \(error)")
+        textField.frame = view.bounds
+        textField.isUserInteractionEnabled = false
+        view.addSubview(textField)
+       
+        for modelName in modelNames {
+            testModelBufferContentsForModelNamed(modelName)
         }
         
-        // generate a large enough buffer to allow streaming vertices for 3 semaphore controlled frames
-        vertexBuffer = device.makeBuffer(length: ConstantBufferSize, options: [])
-        vertexBuffer.label = "vertices"
-        
-        let vertexColorSize = vertexData.count * MemoryLayout<Float>.size
-        vertexColorBuffer = device.makeBuffer(bytes: vertexColorData, length: vertexColorSize, options: [])
-        vertexColorBuffer.label = "colors"
+        textField.text = text
     }
     
-    func update() {
+    //===================================================================================
+    //MARK: Testing MTKMesh Buffer Contents
+    //===================================================================================
+    
+    func testModelBufferContentsForModelNamed(_ name: String) {
         
-        // vData is pointer to the MTLBuffer's Float data contents
-        let pData = vertexBuffer.contents()
-        let vData = (pData + 256 * bufferIndex).bindMemory(to:Float.self, capacity: 256 / MemoryLayout<Float>.stride)
+        let mtlVertexDescriptor = MTLVertexDescriptor();
         
-        // reset the vertices to default before adding animated offsets
-        vData.initialize(from: vertexData)
+        //Vertex3DIn attributes:
+        //positions
+        mtlVertexDescriptor.attributes[0].format = MTLVertexFormat.float3
+        mtlVertexDescriptor.attributes[0].offset = 0
+        mtlVertexDescriptor.attributes[0].bufferIndex = 0
         
-        // Animate triangle offsets
-        let lastTriVertex = 24
-        let vertexSize = 4
-        for j in 0..<3 {
-            // update the animation offsets
-            xOffset[j] += xDelta[j]
+        //normal
+        mtlVertexDescriptor.attributes[1].format = MTLVertexFormat.float3
+        mtlVertexDescriptor.attributes[1].offset = 12
+        mtlVertexDescriptor.attributes[1].bufferIndex = 0
+        
+        //color
+        mtlVertexDescriptor.attributes[2].format = MTLVertexFormat.float4
+        mtlVertexDescriptor.attributes[2].offset = 24
+        mtlVertexDescriptor.attributes[2].bufferIndex = 0
+        
+        //texture coordinates
+        mtlVertexDescriptor.attributes[3].format = MTLVertexFormat.half2
+        mtlVertexDescriptor.attributes[3].offset = 40
+        mtlVertexDescriptor.attributes[3].bufferIndex = 0
+        
+        //single interleaved buffer
+        mtlVertexDescriptor.layouts[0].stride = 44;
+        mtlVertexDescriptor.layouts[0].stepFunction = MTLVertexStepFunction.perVertex;
+        
+        let mdlVertexDescriptor = MTKModelIOVertexDescriptorFromMetal(mtlVertexDescriptor)
+        let bufferAllocator = MTKMeshBufferAllocator(device: device)
+        
+        renameMDLVertexAttributeAtIndex(0, name: MDLVertexAttributePosition, descriptor: mdlVertexDescriptor)
+        renameMDLVertexAttributeAtIndex(1, name: MDLVertexAttributeNormal, descriptor: mdlVertexDescriptor)
+        renameMDLVertexAttributeAtIndex(2, name: MDLVertexAttributeColor, descriptor: mdlVertexDescriptor)
+        renameMDLVertexAttributeAtIndex(3, name: MDLVertexAttributeTextureCoordinate, descriptor: mdlVertexDescriptor)
+        
+        if let modelURL = Bundle.main.url(forResource: name, withExtension: nil) {
+            let asset = MDLAsset(url: modelURL, vertexDescriptor: mdlVertexDescriptor, bufferAllocator: bufferAllocator)
             
-            if(xOffset[j] >= 1.0 || xOffset[j] <= -1.0) {
-                xDelta[j] = -xDelta[j]
-                xOffset[j] += xDelta[j]
+            //create metalkit shapes
+            var mtkShapes: [MTKMesh] = []
+            let arrayPtr = UnsafeMutablePointer<[MDLMesh]>.allocate(capacity: 0)
+            let mdlShapesPointer = AutoreleasingUnsafeMutablePointer<NSArray?>(arrayPtr)
+            
+            do {
+                try mtkShapes = MTKMesh.newMeshes(from: asset, device: device, sourceMeshes: mdlShapesPointer)
+            }
+            catch {
+                print("failed to load mesh \(error)")
             }
             
-            yOffset[j] += yDelta[j]
-            
-            if(yOffset[j] >= 1.0 || yOffset[j] <= -1.0) {
-                yDelta[j] = -yDelta[j]
-                yOffset[j] += yDelta[j]
+            if let mesh = mtkShapes.first {
+                //print the buffer:
+                text.append("\n\nloading mesh with name: \(name)\n\n")
+                
+                let vertexBuffer = mesh.vertexBuffers[0]
+                let floatData = vertexBuffer.buffer.contents().bindMemory(to: Float.self, capacity: vertexBuffer.length / MemoryLayout<Float>.stride)
+                for i in 0..<11 {
+                    text.append("data [\(i)] = \(floatData[i])\n")
+                }
+                text.append("...")
             }
-            
-            // Update last triangle position with updated animated offsets
-            let pos = lastTriVertex + j*vertexSize
-            vData[pos] = xOffset[j]
-            vData[pos+1] = yOffset[j]
         }
+    }
+    
+    private func renameMDLVertexAttributeAtIndex(_ index: Int, name: String, descriptor: MDLVertexDescriptor) {
+        let originalAttribute = descriptor.attributes[index] as! MDLVertexAttribute
+        let renamedAttribute = MDLVertexAttribute(name: name, format: originalAttribute.format, offset: originalAttribute.offset, bufferIndex: originalAttribute.bufferIndex)
+        descriptor.attributes.replaceObject(at: index, with: renamedAttribute)
     }
     
     func draw(in view: MTKView) {
-        
-        // use semaphore to encode 3 frames ahead
-        let _ = inflightSemaphore.wait(timeout: DispatchTime.distantFuture)
-        
-        self.update()
-        
-        let commandBuffer = commandQueue.makeCommandBuffer()
-        commandBuffer.label = "Frame command buffer"
-        
-        // use completion handler to signal the semaphore when this frame is completed allowing the encoding of the next frame to proceed
-        // use capture list to avoid any retain cycles if the command buffer gets retained anywhere besides this stack frame
-        commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            if let strongSelf = self {
-                strongSelf.inflightSemaphore.signal()
-            }
-            return
-        }
-        
-        if let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable {
-            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
-            renderEncoder.label = "render encoder"
-            
-            renderEncoder.pushDebugGroup("draw morphing triangle")
-            renderEncoder.setRenderPipelineState(pipelineState)
-            renderEncoder.setVertexBuffer(vertexBuffer, offset: 256*bufferIndex, at: 0)
-            renderEncoder.setVertexBuffer(vertexColorBuffer, offset:0 , at: 1)
-            renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 9, instanceCount: 1)
-            
-            renderEncoder.popDebugGroup()
-            renderEncoder.endEncoding()
-                
-            commandBuffer.present(currentDrawable)
-        }
-        
-        // bufferIndex matches the current semaphore controled frame index to ensure writing occurs at the correct region in the vertex buffer
-        bufferIndex = (bufferIndex + 1) % MaxBuffers
-        
-        commandBuffer.commit()
     }
     
-    
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        
     }
 }

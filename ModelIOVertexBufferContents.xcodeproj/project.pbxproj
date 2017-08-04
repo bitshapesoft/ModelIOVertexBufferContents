@@ -16,6 +16,8 @@
 		0A8E2B941F34F1E800F7E599 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A8E2B921F34F1E800F7E599 /* Main.storyboard */; };
 		0A8E2B961F34F1E800F7E599 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A8E2B951F34F1E800F7E599 /* Assets.xcassets */; };
 		0A8E2B991F34F1E800F7E599 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0A8E2B971F34F1E800F7E599 /* LaunchScreen.storyboard */; };
+		0A8E2BA21F34F23600F7E599 /* uv-sphere.stl in Resources */ = {isa = PBXBuildFile; fileRef = 0A8E2BA01F34F23600F7E599 /* uv-sphere.stl */; };
+		0A8E2BA31F34F23600F7E599 /* wavePlane.obj in Resources */ = {isa = PBXBuildFile; fileRef = 0A8E2BA11F34F23600F7E599 /* wavePlane.obj */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 		0A8E2B951F34F1E800F7E599 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A8E2B981F34F1E800F7E599 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		0A8E2B9A1F34F1E800F7E599 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0A8E2BA01F34F23600F7E599 /* uv-sphere.stl */ = {isa = PBXFileReference; lastKnownFileType = file; path = "uv-sphere.stl"; sourceTree = "<group>"; };
+		0A8E2BA11F34F23600F7E599 /* wavePlane.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = wavePlane.obj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +84,8 @@
 				0A8E2B8E1F34F1E800F7E599 /* GameViewController.swift */,
 				0A8E2B901F34F1E800F7E599 /* Shaders.metal */,
 				0A8E2B921F34F1E800F7E599 /* Main.storyboard */,
+				0A8E2BA01F34F23600F7E599 /* uv-sphere.stl */,
+				0A8E2BA11F34F23600F7E599 /* wavePlane.obj */,
 				0A8E2B951F34F1E800F7E599 /* Assets.xcassets */,
 				0A8E2B971F34F1E800F7E599 /* LaunchScreen.storyboard */,
 				0A8E2B9A1F34F1E800F7E599 /* Info.plist */,
@@ -148,6 +154,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A8E2B991F34F1E800F7E599 /* LaunchScreen.storyboard in Resources */,
+				0A8E2BA31F34F23600F7E599 /* wavePlane.obj in Resources */,
+				0A8E2BA21F34F23600F7E599 /* uv-sphere.stl in Resources */,
 				0A8E2B961F34F1E800F7E599 /* Assets.xcassets in Resources */,
 				0A8E2B941F34F1E800F7E599 /* Main.storyboard in Resources */,
 			);
@@ -287,6 +295,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 47PZ8EBSE2;
 				INFOPLIST_FILE = ModelIOVertexBufferContents/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bitshape.ModelIOVertexBufferContents;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -300,6 +309,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 47PZ8EBSE2;
 				INFOPLIST_FILE = ModelIOVertexBufferContents/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bitshape.ModelIOVertexBufferContents;
 				PRODUCT_NAME = "$(TARGET_NAME)";
